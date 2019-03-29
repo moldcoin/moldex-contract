@@ -1,0 +1,21 @@
+{
+  "name": "contracts",
+  "version": "1.0.0",
+  "description": "",
+  "main": "constants.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "big-integer": "^1.6.36",
+    "bn.js": "^4.11.6",
+    "underscore": "^1.8.3",
+    "web3": "^1.0.0-beta.36"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}

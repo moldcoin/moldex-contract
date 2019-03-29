@@ -1,0 +1,5 @@
+## truffle node modules
+contracts/node_modules
+
+## python version
+.python-version
