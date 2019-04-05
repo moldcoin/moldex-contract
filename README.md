@@ -1,7 +1,8 @@
 # dex-contract
 
-Truffle v4.1.15 (core: 4.1.15)
-Solidity v0.4.25 (solc-js)
+## develop environment
+- Truffle v4.1.15 (core: 4.1.15)
+- Solidity v0.4.25 (solc-js)
 
 ## get started
 change python version to 2.X(ex:2.7.9)
