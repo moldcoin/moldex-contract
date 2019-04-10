@@ -77,7 +77,7 @@ contract('Proxy contract', function (accounts) {
         assert.equal(ethSend, ethDeposit)
     });
 
-	  it("[4] ETH can withdraw from Dex contract", async function() {
+	  it("[4] ETH can withdraw from Dex contract thorough Proxy contract", async function() {
         const proxyInstance = await proxy.deployed();
         const ethWithdraw = web3.toWei(0.1, "ether");
         const beforeBalance = await moldex.at(proxyInstance.address).ERC1155Tokens(0, 0, subAccount);
@@ -89,7 +89,7 @@ contract('Proxy contract', function (accounts) {
         assert.equal(true, beforeBalance < afterBalance)
     });
 
-    it("[5] fungible-token can be deposited to Dex contract as subAccount", async function() {
+    it("[5] fungible-token can be deposited to Dex contract from subAccount thorough Proxy contract", async function() {
         // instances
         const proxyInstance = await proxy.deployed();
         const tokenInstance = await SampleContract.deployed();
@@ -100,7 +100,7 @@ contract('Proxy contract', function (accounts) {
         assert.equal(100, deposit, "deposit should be 200")
     });
 
-    it("[5] fungible-token can be deposited to Dex contract as subAccount", async function() {
+    it("[5] fungible-token can be deposited to Dex contract from subAccount thorough Proxy contract", async function() {
         // instances
         const proxyInstance = await proxy.deployed();
         const tokenInstance = await SampleContract.deployed();
@@ -121,7 +121,7 @@ contract('Proxy contract', function (accounts) {
         assert.equal(200, deposit, "deposit should be 200")
     });
 
-	  it("[6] sign message and can adminWithdraw ", async function() {
+	  it("[6] sign message and can adminWithdraw thorough Proxy contract", async function() {
         // instances
         const proxyInstance = await proxy.deployed();
         const moldexInstance = await moldex.deployed();
@@ -160,7 +160,7 @@ contract('Proxy contract', function (accounts) {
         assert.equal(100, depositAfter, "deposit should decrease to 100");
     });
 
-	  it("[7] should deposit new fungible-token to dex contract", async function() {
+	  it("[7] should deposit new fungible-token to dex contract thorough Proxy contract", async function() {
         // Instances
         const proxyInstance = await proxy.deployed();
         const moldexInstance = await moldex.deployed();
@@ -187,7 +187,7 @@ contract('Proxy contract', function (accounts) {
     });
 
 
-    it("[8] should exchange token1 and token3 using dex contract", async function() {
+    it("[8] should exchange token1 and token3 using dex contract thorough Proxy contract", async function() {
         /*
         account balances of deposits before exchange
                     token1 token3
@@ -322,7 +322,7 @@ contract('Proxy contract', function (accounts) {
 
 
     // Deposit non-fungible token
-    it("[9] should deposit non-fungible token to dex contract", async function () {
+    it("[9] should deposit non-fungible token to dex contract thorough Proxy contract", async function () {
         // Instances
 	 	    const proxyInstance = await proxy.deployed();
         const moldexInstance = await moldex.deployed();
@@ -352,7 +352,7 @@ contract('Proxy contract', function (accounts) {
     });
 
 
-    it('[15] should exchange non-fungible to fungible token', async function () {
+    it('[10] should exchange non-fungible to fungible token thorough Proxy contract', async function () {
         /*          Deposit
                    Before exchange             After exchange
                    token2(NFT)  token3(FT)     token2(NFT)  token3(FT)
@@ -370,7 +370,7 @@ contract('Proxy contract', function (accounts) {
         */
         const two = new BN('2');
         const one = new BN('1');
-        const nonFungibleIdBaseBN = nonFungibleBaseBN.add(fungibleBaseBN.mul(two)).add(one);
+        const nonFungibleIdBaseBN = nonFungibleBaseBN.add(fungibleBaseBN.mul(two));
         const nonFungibleTokenId = nonFungibleIdBaseBN.toString(10);
 
         /*
