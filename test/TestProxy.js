@@ -18,7 +18,7 @@ contract('Proxy contract', function (accounts) {
         "ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f", // key of accounts[1]
     ];
 
-    it("[1] should generate sample fungible token whose total supply is 1000000, decimal 2 and generate non-fungible token", async function() {
+    it("[0] should generate sample fungible token whose total supply is 1000000, decimal 2 and generate non-fungible token", async function() {
         const instance = await SampleContract.deployed();
         await instance.mint("Fungible Token 1", 1000000, "http://sample.fungible.com", 2, "FT", false);
         const totalSupplyFungible = await instance.totalSupply(fungibleTokenBase);
@@ -89,7 +89,7 @@ contract('Proxy contract', function (accounts) {
         assert.equal(true, beforeBalance < afterBalance)
     });
 
-    it("[5] fungible-token can be deposited to Dex contract from subAccount thorough Proxy contract", async function() {
+    it("[5.1] fungible-token can be deposited to Dex contract from subAccount thorough Proxy contract", async function() {
         // instances
         const proxyInstance = await proxy.deployed();
         const tokenInstance = await SampleContract.deployed();
@@ -100,7 +100,7 @@ contract('Proxy contract', function (accounts) {
         assert.equal(100, deposit, "deposit should be 200")
     });
 
-    it("[5] fungible-token can be deposited to Dex contract from subAccount thorough Proxy contract", async function() {
+    it("[5.2] fungible-token can be deposited to Dex contract from subAccount thorough Proxy contract", async function() {
         // instances
         const proxyInstance = await proxy.deployed();
         const tokenInstance = await SampleContract.deployed();
