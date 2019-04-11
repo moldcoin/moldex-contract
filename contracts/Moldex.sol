@@ -80,6 +80,20 @@ contract Moldex {
         inactivityReleasePeriod = 0;
     }
 
+
+		//set initialize func to use proxy contract
+		//see detail in https://blog.zeppelinos.org/proxy-patterns/
+	 bool internal _initialized;
+
+   function initialize(address _owner, address _feeAccount) public {
+      require(!_initialized);
+        owner = _owner;
+        admins[_owner] = true;
+        feeAccount = _feeAccount;
+        inactivityReleasePeriod = 0;
+      _initialized = true;
+   }
+
     // Set Owner function
     function setOwner
     (
