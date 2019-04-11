@@ -1,6 +1,7 @@
 var SampleContract = artifacts.require("./SampleToken.sol");
 var moldex = artifacts.require("./Moldex.sol");
 var proxy = artifacts.require("./proxy/OwnedUpgradeabilityProxy.sol");
+var encodeCall = require('./helpers/encodeCall')
 var bigInt = require('../node_modules/big-integer');
 var BN = require('bn.js');
 
@@ -17,6 +18,10 @@ contract('Proxy contract', function (accounts) {
         "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", // key of accounts[0]
         "ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f", // key of accounts[1]
     ];
+
+	  // see detail about encodeCall in https://docs.zeppelinos.org/docs/advanced.html
+   	// add constructor variables to proxy storage
+    const initializeData = encodeCall('initialize', ['address', 'address'], [coinBase, coinBase]);
 
     it("[0] should generate sample fungible token whose total supply is 1000000, decimal 2 and generate non-fungible token", async function() {
         const instance = await SampleContract.deployed();
@@ -69,7 +74,17 @@ contract('Proxy contract', function (accounts) {
         // Instances
         const proxyInstance = await proxy.deployed();
         const moldexInstance = await moldex.deployed();
-        await proxyInstance.upgradeTo([moldexInstance.address]);
+
+        const implementation = await proxyInstance.implementation()
+        assert.equal(implementation, 0x0)
+
+        await proxyInstance.upgradeToAndCall(moldexInstance.address, initializeData, { from : coinBase });
+
+			  const imp_address = await proxyInstance.implementation()
+			  assert.equal(imp_address, moldexInstance.address)
+
+   			const owner = await moldex.at(proxyInstance.address).owner();
+	  		assert.equal(owner, coinBase)
 
         const ethSend = web3.toWei(0.1, "ether");
         await web3.eth.sendTransaction({ to: proxyInstance.address, from: subAccount, value: ethSend });
@@ -121,10 +136,21 @@ contract('Proxy contract', function (accounts) {
         assert.equal(200, deposit, "deposit should be 200")
     });
 
-	  it("[6] sign message and can adminWithdraw thorough Proxy contract", async function() {
+
+    it("[6.1] set admin to Dex Contract through Proxy contract", async function() {
         // instances
         const proxyInstance = await proxy.deployed();
-        const moldexInstance = await moldex.deployed();
+			  const owner = await moldex.at(proxyInstance.address).owner();
+			  assert.equal(owner, coinBase)
+        // set admin
+        await moldex.at(proxyInstance.address).setAdmin([subAccount], [true], { from: coinBase });
+			  const isAdmin = await moldex.at(proxyInstance.address).admins(subAccount);
+			  assert.equal(true, isAdmin);
+    });
+
+	  it("[6.2] sign message and can adminWithdraw thorough Proxy contract", async function() {
+        // instances
+        const proxyInstance = await proxy.deployed();
         const tokenInstance = await SampleContract.deployed();
         /*
         RawMessage: (Dex Address)(Token Address)(TokenId)(Amount)(User Address)
@@ -163,7 +189,6 @@ contract('Proxy contract', function (accounts) {
 	  it("[7] should deposit new fungible-token to dex contract thorough Proxy contract", async function() {
         // Instances
         const proxyInstance = await proxy.deployed();
-        const moldexInstance = await moldex.deployed();
         const tokenInstance = await SampleContract.deployed();
 
         const coinBaseBalanceBefore = await moldex.at(proxyInstance.address).ERC1155Tokens(tokenInstance.address, fungibleTokenBase, coinBase);
@@ -202,7 +227,6 @@ contract('Proxy contract', function (accounts) {
 
         // Instances
 			  const proxyInstance = await proxy.deployed();
-        const moldexInstance = await moldex.deployed();
         const tokenInstance = await SampleContract.deployed();
         // tokenIds
         const buyTokenIdBN = new BN(fungibleTokenBase);
@@ -325,7 +349,6 @@ contract('Proxy contract', function (accounts) {
     it("[9] should deposit non-fungible token to dex contract thorough Proxy contract", async function () {
         // Instances
 	 	    const proxyInstance = await proxy.deployed();
-        const moldexInstance = await moldex.deployed();
         const tokenInstance = await SampleContract.deployed();
 
         /*  tokenIds
@@ -362,7 +385,6 @@ contract('Proxy contract', function (accounts) {
 
         // Instances
 			  const proxyInstance = await proxy.deployed();
-        const moldexInstance = await moldex.deployed();
         const tokenInstance = await SampleContract.deployed();
 
         /*  tokenIds
