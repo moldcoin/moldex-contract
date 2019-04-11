@@ -1,6 +1,7 @@
 var SampleContract = artifacts.require("./SampleToken.sol");
 var moldex = artifacts.require("./Moldex.sol");
 var proxy = artifacts.require("./proxy/OwnedUpgradeabilityProxy.sol");
+var encodeCall = require('./helpers/encodeCall')
 var bigInt = require('../node_modules/big-integer');
 var BN = require('bn.js');
 
@@ -17,6 +18,9 @@ contract('Proxy contract', function (accounts) {
         "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", // key of accounts[0]
         "ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f", // key of accounts[1]
     ];
+
+	  // see detail about encodeCall in https://docs.zeppelinos.org/docs/advanced.html
+    const initializeData = encodeCall('initialize', ['address'], [coinBase]);
 
     it("[0] should generate sample fungible token whose total supply is 1000000, decimal 2 and generate non-fungible token", async function() {
         const instance = await SampleContract.deployed();
@@ -69,7 +73,7 @@ contract('Proxy contract', function (accounts) {
         // Instances
         const proxyInstance = await proxy.deployed();
         const moldexInstance = await moldex.deployed();
-        await proxyInstance.upgradeTo([moldexInstance.address]);
+        await proxyInstance.upgradeToAndCall([moldexInstance.address], [initializeData]);
 
         const ethSend = web3.toWei(0.1, "ether");
         await web3.eth.sendTransaction({ to: proxyInstance.address, from: subAccount, value: ethSend });
