@@ -5,9 +5,6 @@ var bigInt = require('../node_modules/big-integer');
 var BN = require('bn.js');
 
 contract('SampleContract And Dex', function (accounts) {
-    const NFTBase = "0000000000000000000000000000000000000000000000000000000000000001"; // 128 bit 10000...001
-    const NFTBaseBN = new BN(NFTBase);
-    const NFTBigInt = bigInt(NFTBase);
     const coinBase = accounts[0];
     const subAccount = accounts[1];
     const privateKeys = [
@@ -41,29 +38,21 @@ contract('SampleContract And Dex', function (accounts) {
         assert.equal(symbol, "MTKN20");
     });
 
-    it("[3] should send ERC721 token. Test minting and sending.", async function () {
+    it("[3] should send ERC721 token", async function () {
         // instances
         const token = await MyToken721.deployed();
 				await token.mint(); //tokenId 2
 
-        // Token Type
-        const nonFungibleTokenBase = NFTBigInt.plus(NFTBigInt.times(1));
-        const mintedTokenId = nonFungibleTokenBase.toString();
-
-      // mint new ERC721 token tokenId 2
-        // check symbol is correct
-        const symbol = await token.symbol();
-        assert.equal("MTKN", symbol);
         // check token owner is correct
-        const tokenOwner = await token.ownerOf(mintedTokenId);
+        const tokenOwner = await token.ownerOf(2);
         assert.equal(coinBase, tokenOwner);
         // transfer ERC721 token from coinBase to subAccount
-        await token.transferFrom(coinBase, subAccount, mintedTokenId);
+        await token.transferFrom(coinBase, subAccount, 2);
         // check token is correctly sent
         const balance_after_receive = await token.balanceOf(subAccount);
         assert.equal(1, balance_after_receive)
         // check token owner 
-        const mintedTokenOwner = await token.ownerOf(mintedTokenId);
+        const mintedTokenOwner = await token.ownerOf(2);
         assert.equal(subAccount, mintedTokenOwner);
     });
 
@@ -174,46 +163,44 @@ contract('SampleContract And Dex', function (accounts) {
         assert.equal(true, beforeBalance < afterBalance)
     });
 
-    it("[7] ERC721 token can be deposited to Dex contract from subaccount", async function () {
+    it("[11][trade] ERC721 token can be deposited to Dex contract from subaccount", async function () {
         // instances
         const moldexInstance = await moldex.deployed();
 			  const token = await MyToken721.deployed();
 
-			  await token.approve(moldexInstance.address, 2, { from: subAccount });
-        await moldexInstance.deposit721(token.address, 2, { from: subAccount });
-        const deposit = await moldexInstance.Assets(token.address,2,subAccount);
+			  await token.approve(moldexInstance.address, 1);
+        await moldexInstance.deposit721(token.address, 1);
+        const deposit = await moldexInstance.Assets(token.address,1,coinBase);
         assert.equal(1, deposit)
-        const mintedTokenOwner = await token.ownerOf(2);
+        const mintedTokenOwner = await token.ownerOf(1);
         assert.equal(moldexInstance.address, mintedTokenOwner);
     });
 
-    it("[5] ERC20 token can be deposited to Dex contract", async function () {
+    it("[12][trade] ERC20 token can be deposited to Dex contract from subAccount", async function () {
         // instances
         const moldexInstance = await moldex.deployed();
 			  const token = await MyToken20.deployed();
 
-			  await token.approve(moldexInstance.address, 100);
-        await moldexInstance.deposit20(token.address, 100);
-        const deposit = await moldexInstance.Assets(token.address,0,coinBase);
+			  await token.transfer(subAccount, 100);
+			  const balance = await token.balanceOf(subAccount);
+			  assert.equal(100, balance)
+
+			  await token.approve(moldexInstance.address, 100, { from: subAccount });
+        await moldexInstance.deposit20(token.address, 100, { from: subAccount });
+        const deposit = await moldexInstance.Assets(token.address,0,subAccount);
         assert.equal(100, deposit)
-        const afterBalance = await token.balanceOf(moldexInstance.address);
-        assert.equal(100, afterBalance);
     });
 
-    it("[11] should exchange tokenId 2(ERC721) and ERC20 token using dex contract", async function() {
-        /*
-        account balances of deposits before exchange
-                    ERC20 ERC721(tokenId 2)
-        coinBase:   100      0
-        subAccount: 0        1
+    it("[13][trade] should exchange tokenId 1(ERC721) and ERC20 token using dex contract", async function() {
 
-        account balances of deposits before exchange
-                    ERC20 ERC721(tokenId 2)
-        coinBase:   50       1
-        subAccount: 50       0
+        /*          Deposit
+                   Before exchange             After exchange
+                   ERC721        ERC20         ERC721          ERC20
+       coinBase    1             0             0               50
+       subAccount  0             100           1               50
 
-				maker:subAccount
-				taker:coinBase
+				maker:coinBase
+				taker:subAccount
         * */
 
         // Instances
@@ -221,45 +208,55 @@ contract('SampleContract And Dex', function (accounts) {
 			  const ERC20 = await MyToken20.deployed();
 			  const ERC721 = await MyToken721.deployed();
 
-        // tokenIds
-        const buyTokenIdBN = new BN("0");
-        const sellTokenIdBN = new BN("2");
-        const buyTokenIdPaddedHexString = convertHexString(buyTokenIdBN);
-        const sellTokenIdPaddedHexString = convertHexString(sellTokenIdBN);
+        const NFTBase = "0000000000000000000000000000000000000000000000000000000000000001"; // 128 bit 00000...001
+        const FTBase = "0000000000000000000000000000000000000000000000000000000000000000"; // 128 bit 00000...000
+        const NFTBaseBN = new BN(NFTBase);
+        const FTBaseBN = new BN(FTBase);
+
+        /*  tokenIds
+            non-fungibleToken
+        */
+        const nonFungibleIdBaseBN = NFTBaseBN;
+        const nonFungibleTokenId = NFTBaseBN.toString(10);
 
         /*
-        1 ERC721 with 50 token of ERC20
-        coinBase buy 1 ERC721 token using 50 tokens of ERC20
+            fungibleToken
         * */
+        const fungibleTokenIdBN = FTBaseBN;
+        const fungibleTokenId = FTBaseBN.toString(10);
 
+        // order
         const buyAmountBN = new BN("50");
         const sellAmountBN = new BN("1");
         const expiryBN = new BN("10000");
-        const makerNonceBN = new BN("10");
+        const makerNonceBN = new BN("11");
+        // trade
         const amountBN = new BN("50");
-        const takerNonceBN = new BN("10");
+        const takerNonceBN = new BN("11");
         const feeMakeBN = new BN("0");
-        // const feeTakeBN = new BN("0");
+        const feeTakeBN = new BN("0");
 
-        // hex string
-        const buyAmountPaddedHexString = convertHexString(buyAmountBN);
-        const sellAmountPaddedHexString = convertHexString(sellAmountBN);
-        const expiryPaddedHexString = convertHexString(expiryBN);
-        const makerNoncePaddedHexString = convertHexString(makerNonceBN);
-        const amountPaddedHexString = convertHexString(amountBN);
-        const takerNoncePaddedHexString = convertHexString(takerNonceBN);
-        const feeMakePaddedHexString = convertHexString(feeMakeBN);
-        // const feeTakePaddedHexString = convertHexString(feeTakeBN);
+        // hex String
+        const hexBuyAmount = convertHexString(buyAmountBN);
+        const hexSellAmount = convertHexString(sellAmountBN);
+        const hexExpiry = convertHexString(expiryBN);
+        const hexMakerNonce = convertHexString(makerNonceBN);
+        const hexAmount = convertHexString(amountBN);
+        const hexTakerNonce = convertHexString(takerNonceBN);
+        const hexBuyTokenId = convertHexString(fungibleTokenIdBN);
+        const hexSellTokenId = convertHexString(nonFungibleIdBaseBN);
 
+
+        // create orderHash
         const orderHashBase =
             moldexInstance.address + ERC20.address.slice(2,42) +
-            buyTokenIdPaddedHexString + buyAmountPaddedHexString +
-            ERC721.address.slice(2,42) + sellTokenIdPaddedHexString +
-            sellAmountPaddedHexString + expiryPaddedHexString +
-            makerNoncePaddedHexString + subAccount.slice(2,42);
+            hexBuyTokenId + hexBuyAmount +
+            ERC721.address.slice(2,42) + hexSellTokenId +
+            hexSellAmount + hexExpiry +
+            hexMakerNonce + coinBase.slice(2,42);
         // sign order hash
         const orderHash = web3.sha3(orderHashBase, { encoding: 'hex' });
-        const orderHashSign = web3.eth.sign(subAccount, orderHash);
+        const orderHashSign = web3.eth.sign(coinBase, orderHash);
         const r1 = orderHashSign.slice(0,66);
         const s1 = "0x" + orderHashSign.slice(66, 130);
         let v_base1 = new BN(Number(orderHashSign.slice(130, 132)) + 27);
@@ -267,47 +264,16 @@ contract('SampleContract And Dex', function (accounts) {
 
         // create tradeHash
         const tradeHashBase =
-            orderHash + amountPaddedHexString +
-            coinBase.slice(2,42) + takerNoncePaddedHexString;
+            orderHash + hexAmount +
+            subAccount.slice(2,42) + hexTakerNonce;
         const tradeHash = web3.sha3(tradeHashBase, { encoding: 'hex' });
-        const tradeHashSign = web3.eth.sign(coinBase, tradeHash);
+        const tradeHashSign = web3.eth.sign(subAccount, tradeHash);
         const r2 = tradeHashSign.slice(0,66);
         const s2 = "0x" + tradeHashSign.slice(66,130);
         const v_base2 = new BN(Number(tradeHashSign.slice(130,132)) + 27);
         const v2 = v_base2.toString(10);
 
-        /*
-        tradeValues[0] buyAmount
-        tradeValues[1] sellAmount     amountBuyとamountSellは amountBuy / amountSellでレートを表す
-        tradeValues[2] expiry
-        tradeValues[3] order nonce
-        tradeValues[4] amount // これは このトレードで交換されるBuyTokenの実際の量
-        tradeValues[5] trade nonce
-        tradeValues[6] feeMake
-        // tradeValues[7] feeTake
-        tradeValues[8] buy token の Id
-        tradeValues[9] sell token の Id
-        */
-
-        const tradeValues = [
-            buyAmountBN.toString(10),
-            sellAmountBN.toString(10),
-            expiryBN.toString(10),
-            makerNonceBN.toString(10),
-            amountBN.toString(10),
-            takerNonceBN.toString(10),
-            feeMakeBN.toString(10),
-            // feeTakeBN.toString(10),
-            buyTokenIdBN.toString(10),
-            sellTokenIdBN.toString(10)
-        ];
-
-        const tradeAddresses = [
-            ERC20.address,
-            ERC721.address,
-            coinBase,
-            subAccount
-        ];
+        // trade args
 
         const v = [
             v1,
@@ -320,22 +286,38 @@ contract('SampleContract And Dex', function (accounts) {
             r2,
             s2
         ];
-			console.log("ok!")
-        // create trade transaction
-        await moldexInstance.trade721(tradeValues, tradeAddresses, v, rs);
 
-        const depositAfterExchange = await moldexInstance.Assets(ERC20.address, buyTokenIdBN.toString(10), coinBase);
-        const depositAfterExchangeSub = await moldexInstance.Assets(ERC20.address, buyTokenIdBN.toString(10), subAccount);
-        const depositAfterExchangeSell = await moldexInstance.Assets(ERC721.address, sellTokenIdBN.toString(10), coinBase);
-        const depositAfterExchangeSellSub = await moldexInstance.Assets(ERC721.address, sellTokenIdBN.toString(10), subAccount);
+        const tradeValues = [
+            buyAmountBN.toString(10),
+            sellAmountBN.toString(10),
+            expiryBN.toString(10),
+            makerNonceBN.toString(10),
+            amountBN.toString(10),
+            takerNonceBN.toString(10),
+            feeMakeBN.toString(10),
+            feeTakeBN.toString(10),
+            fungibleTokenIdBN.toString(10),
+            nonFungibleIdBaseBN.toString(10)
+        ];
 
-        // assert buy tokens
-        assert.equal(50, depositAfterExchange); // 100 - 50 = 50 coinBase bought 1 ERC721
-        assert.equal(50, depositAfterExchangeSub); // 0 + 50 = 50 subAccount sell 1 ERC721
+        const tradeAddresses = [
+            ERC20.address,
+            ERC721.address,
+            coinBase,
+            subAccount
+        ];
 
-        // assert sell tokens
-        assert.equal(1, depositAfterExchangeSell); // 0 + 1 = 1 coinBase sell 50 ERC20
-        assert.equal(0, depositAfterExchangeSellSub); // 1 - 0 = 0 subAccount buy 50 ERC20
+        await moldexInstance.trade(tradeValues, tradeAddresses, v, rs);
+        const depositAfterExchange = await moldexInstance.Assets(ERC20.address, fungibleTokenId, coinBase);
+        const depositAfterExchangeSub = await moldexInstance.Assets(ERC20.address, fungibleTokenId, subAccount);
+        const depositAfterExchangeSell = await moldexInstance.Assets(ERC721.address, nonFungibleTokenId, coinBase);
+        const depositAfterExchangeSellSub = await moldexInstance.Assets(ERC721.address, nonFungibleTokenId, subAccount);
+
+
+        assert.equal(50,depositAfterExchange); // coinBase FT 150
+        assert.equal(50,depositAfterExchangeSub); // subAccount 50
+        assert.equal(0, depositAfterExchangeSell); // coinBase NFT 0
+        assert.equal(1, depositAfterExchangeSellSub); // coinBase NFT 1
     });
 
     /*=========== Functions ==========*/
