@@ -1,5 +1,5 @@
 ## truffle node modules
-contracts/node_modules
+node_modules/
 
 ## python version
 .python-version
