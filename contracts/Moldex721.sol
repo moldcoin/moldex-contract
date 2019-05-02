@@ -4,43 +4,33 @@ import "./SafeMath.sol";
 /*
 
 このコントラクトについて
-1. ERC1155 Token Standardを利用
-2. ERC1155 Tokenのデポジット
-3. ERC1155 Tokenの交換
-4. ERC1155 Tokenの引き出し
-5. ERC1155 Tokenの交換にかかるFeeをもらう(Admin)
+1. ERC20 & ERC721 Token Standardを利用
+2. ERC20 & ERC721 Tokenのデポジット
+3. ERC20 & ERC721 Tokenの交換
+4. ERC20 & ERC721 Tokenの引き出し
+5. ERC20 & ERC721 Tokenの交換にかかるFeeをもらう(Admin)
 6. Contract Ownerの変更
 7. Contract Admin User の追加
 
 */
 contract Token20 {
     function transfer(address to, uint256 value) external returns (bool);
-
     function approve(address spender, uint256 value) external returns (bool);
-
     function transferFrom(address from, address to, uint256 value) external returns (bool);
-
     function totalSupply() external view returns (uint256);
-
     function balanceOf(address who) external view returns (uint256);
-
     function allowance(address owner, address spender) external view returns (uint256);
 }
 
 contract Token721  {
-
     function balanceOf(address owner) public view returns (uint256 balance);
     function ownerOf(uint256 tokenId) public view returns (address owner);
-
     function approve(address to, uint256 tokenId) public;
     function getApproved(uint256 tokenId) public view returns (address operator);
-
     function setApprovalForAll(address operator, bool _approved) public;
     function isApprovedForAll(address owner, address operator) public view returns (bool);
-
     function transferFrom(address from, address to, uint256 tokenId) public;
     function safeTransferFrom(address from, address to, uint256 tokenId) public;
-
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory data) public;
 }
 
@@ -56,7 +46,7 @@ contract Moldex721 {
     //tokenの登録 contract address -> token_id -> user address -> deposit balance
 		/*
 			 1. ETHの場合
-        address(0) -> 0 -> user address -> deposit balance
+			  address(0) -> 0 -> user address -> deposit balance
 			 2. ERC20の場合
 			 contract address -> 0 -> user address -> deposit balance
 			 3. ERC721の場合
@@ -385,95 +375,6 @@ contract Moldex721 {
     }
 
 
-		//makerがERC721を出品するのみ
-		//したがって、maker feeのみかかるが、taker feeはかからない
-		//ERC721は分割できないため、taker feeを設けることができない
-    function trade721
-    (
-        uint256[9] tradeValues,
-        address[4] tradeAddresses,
-
-        uint8[2] v,
-        bytes32[4] rs
-    )
-    external onlyAdmin
-    returns (bool)
-    {
-        /*
-        tradeValues[0] buyAmount
-        tradeValues[1] sellAmount     amountBuyとamountSellは amountBuy / amountSellでレートを表す
-        tradeValues[2] expires
-        tradeValues[3] order nonce
-        tradeValues[4] amount // これは このトレードで交換されるBuyTokenの実際の量
-        tradeValues[5] trade nonce
-        tradeValues[6] feeMake
-        tradeValues[7] buy token の Id
-        tradeValues[8] sell token の Id
-        */
-
-        /*
-        tradeAddresses[0] tokenBuy
-        tradeAddresses[1] tokenSell
-        tradeAddresses[2] maker
-        tradeAddresses[3] taker
-        */
-
-        /*
-        rs[0] maker r
-        rs[1] maker s
-        rs[2] taker r
-        rs[3] taker s
-        */
-        // orderのnonceがmakerのcurrent nonceより小さいことを確認
-        require(invalidOrder[tradeAddresses[2]] <= tradeValues[3]);
-        // orderHashは、誰が、どのトークンいくつをどのトークン幾つに交換したいのかを指定
-        bytes32 orderHash = keccak256(abi.encodePacked(
-        address(this), // dex address
-        tradeAddresses[0], // buy token address
-        tradeValues[7], // buy token Id
-        tradeValues[0], // buy amount
-        tradeAddresses[1], //  sell token address
-        tradeValues[8], // sell token Id
-        tradeValues[1], // sell amount
-        tradeValues[2], // expiry date
-        tradeValues[3], // order nonce
-        tradeAddresses[2] // maker address
-        ));
-        // check maker signature is valid
-        require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", orderHash)), v[0], rs[0], rs[1]) == tradeAddresses[2]);
-        bytes32 tradeHash = keccak256(abi.encodePacked(orderHash, tradeValues[4], tradeAddresses[3], tradeValues[5]));
-        // check trader signature is valid
-        require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", tradeHash)), v[1], rs[2], rs[3]) == tradeAddresses[3]);
-        // check traded
-        require(!traded[tradeHash]);
-        traded[tradeHash] = true;
-        //check feeMake, feeTake are valid. Maximum 10%
-        require(tradeValues[6] <= 100 finney);
-        // orderFills の合計が買い注文の値をうわまっていないことを確認
-        require(orderFills[orderHash].add(tradeValues[4]) <= tradeValues[0]);
-        // 売る側が必要なトークンの量を持っているか確認(buy tokenの量を確認)
-        require(Assets[tradeAddresses[0]][tradeValues[7]][tradeAddresses[3]] >= tradeValues[4]);
-        // makerが持ってる売りたいトークンの量が                                        amountSell * amount / amountBuy
-        require(Assets[tradeAddresses[1]][tradeValues[8]][tradeAddresses[2]] >= tradeValues[1].mul(tradeValues[4]) / tradeValues[0]);
-
-        // 以下トークンの交換(maker目線でbuyToken or SellToken) 
-				//buyTokenをtakerから引く
-        Assets[tradeAddresses[0]][tradeValues[7]][tradeAddresses[3]] = Assets[tradeAddresses[0]][tradeValues[7]][tradeAddresses[3]].sub(tradeValues[4]);
-        // buyTokenをmakerに加える. 手数料を引いた分
-        Assets[tradeAddresses[0]][tradeValues[7]][tradeAddresses[2]] = Assets[tradeAddresses[0]][tradeValues[7]][tradeAddresses[2]].add(tradeValues[4].mul((1 ether) - tradeValues[6]) / (1 ether));
-        // 手数料を支払う
-        Assets[tradeAddresses[0]][tradeValues[7]][feeAccount] = Assets[tradeAddresses[0]][tradeValues[7]][feeAccount].add(tradeValues[4].mul(tradeValues[6]) / (1 ether));
-        // sellTokenをmakerから引く
-        Assets[tradeAddresses[1]][tradeValues[8]][tradeAddresses[2]] = Assets[tradeAddresses[1]][tradeValues[8]][tradeAddresses[2]].sub(tradeValues[1].mul(tradeValues[4]) / tradeValues[0]);
-        // sellTokenをtakerに足す
-        Assets[tradeAddresses[1]][tradeValues[8]][tradeAddresses[3]] = Assets[tradeAddresses[1]][tradeValues[8]][tradeAddresses[3]].add(tradeValues[1]);
-        // add amount to orderFills
-        orderFills[orderHash] = orderFills[orderHash].add(tradeValues[4]);
-
-        lastActiveTransaction[tradeAddresses[2]] = block.number;
-        lastActiveTransaction[tradeAddresses[3]] = block.number;
-        return true;
-    }
     function() public payable {
         Assets[address(0)][0][msg.sender] = Assets[address(0)][0][msg.sender].add(msg.value);
         lastActiveTransaction[msg.sender] = block.number;
