@@ -246,7 +246,7 @@ contract MyToken20 is StandardToken {
   string public name = "MyToken20";
   string public symbol = "MTKN20";
   uint public decimals = 18;
-  uint256 public constant initialSupply = 1000;
+  uint256 public constant initialSupply = 1000000000000000000000;
 
   constructor() public  {
     totalSupply_ = initialSupply;

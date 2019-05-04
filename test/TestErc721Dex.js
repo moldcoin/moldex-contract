@@ -32,8 +32,8 @@ contract('SampleContract And Dex', function (accounts) {
 			  const initialSupply = await token.totalSupply();
         const name = await token.name();
         const symbol = await token.symbol();
-        assert.equal(amount, 1000);
-        assert.equal(initialSupply, 1000);
+        assert.equal(amount, 1000000000000000000000);
+        assert.equal(initialSupply, 1000000000000000000000);
         assert.equal(name, "MyToken20");
         assert.equal(symbol, "MTKN20");
     });
@@ -94,7 +94,7 @@ contract('SampleContract And Dex', function (accounts) {
 
 			  // check balance of ERC20 token
         const afterBalance = await token.balanceOf(coinBase);
-        assert.equal(1000, afterBalance);
+        assert.equal(1000000000000000000000, afterBalance);
 
         // check deposit amount
         const deposit = await moldexInstance.Assets(token.address, 0, coinBase);
