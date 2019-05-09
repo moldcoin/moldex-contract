@@ -39,8 +39,6 @@ contract Moldex721 {
 
     //コントラクトowner
     address public owner;
-    // user address -> nonce
-    mapping(address => uint256) invalidOrder;
     // tradeのfeeを受け取るアカウント
     address public feeAccount;
     //tokenの登録 contract address -> token_id -> user address -> deposit balance
@@ -320,8 +318,6 @@ contract Moldex721 {
         rs[2] taker r
         rs[3] taker s
         */
-        // orderのnonceがmakerのcurrent nonceより小さいことを確認
-        require(invalidOrder[tradeAddresses[2]] <= tradeValues[3]);
         // orderHashは、誰が、どのトークンいくつをどのトークン幾つに交換したいのかを指定
         bytes32 orderHash = keccak256(abi.encodePacked(
         address(this), // dex address
