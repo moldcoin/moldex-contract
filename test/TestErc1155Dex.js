@@ -1,11 +1,12 @@
 var SampleContract = artifacts.require("./SampleToken.sol");
 var moldex = artifacts.require("./Moldex.sol");
-var bigInt = require('../node_modules/big-integer');
-var BN = require('bn.js');
+var bigInt = require("../node_modules/big-integer");
+var BN = require("bn.js");
 
-contract('SampleContract And Dex', function (accounts) {
+contract("SampleContract And Dex", function(accounts) {
     const fungibleTokenBase = "340282366920938463463374607431768211456"; // 129 bit 10000...000
-    const nonFungibleTokenBase = "57896044618658097711785492504343953926634992332820282019728792003956564819968"; // non fungible token base 256bit 1000..00
+    const nonFungibleTokenBase =
+        "57896044618658097711785492504343953926634992332820282019728792003956564819968"; // non fungible token base 256bit 1000..00
     const fungibleBigInt = bigInt(fungibleTokenBase);
     const fungibleBaseBN = new BN(fungibleTokenBase);
     const nonFungibleBaseBN = new BN(nonFungibleTokenBase);
@@ -14,23 +15,43 @@ contract('SampleContract And Dex', function (accounts) {
     const subAccount = accounts[1];
     const privateKeys = [
         "c87509a1c067bbde78beb793e6fa76530b6382a4c0241e5e4a9ec0a0f44dc0d3", // key of accounts[0]
-        "ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f", // key of accounts[1]
+        "ae6ae8e5ccbfb04590405997ee2d52d2b330726137b875053c36d94e974d162f" // key of accounts[1]
     ];
 
     it("[1] should generate sample fungible token whose total supply is 1000000, decimal 2 and generate non-fungible token", async function() {
         const instance = await SampleContract.deployed();
-        await instance.mint("Fungible Token 1", 1000000, "http://sample.fungible.com", 2, "FT", false);
-        await instance.mint("Non Fungible Token", 0, "http://sample.fungible.com", 0, "NFT", true);
-        const totalSupplyFungible = await instance.totalSupply(fungibleTokenBase);
+        await instance.mint(
+            "Fungible Token 1",
+            1000000,
+            "http://sample.fungible.com",
+            2,
+            "FT",
+            false
+        );
+        await instance.mint(
+            "Non Fungible Token",
+            0,
+            "http://sample.fungible.com",
+            0,
+            "NFT",
+            true
+        );
+        const totalSupplyFungible = await instance.totalSupply(
+            fungibleTokenBase
+        );
         const nf_token_id = nonFungibleBigInt.plus(fungibleBigInt.times(2));
-        const totalSupplyNonFungible = await instance.totalSupply(nf_token_id.toString());
-        const isNonFungible = await instance.isNonFungible(nf_token_id.toString());
+        const totalSupplyNonFungible = await instance.totalSupply(
+            nf_token_id.toString()
+        );
+        const isNonFungible = await instance.isNonFungible(
+            nf_token_id.toString()
+        );
         assert.equal(true, isNonFungible);
         assert.equal(totalSupplyFungible.toNumber(), 1000000);
         assert.equal(totalSupplyNonFungible.toNumber(), 0);
     });
 
-    it("[2] should send fungible token ", async function () {
+    it("[2] should send fungible token ", async function() {
         // Instances
         const instance = await SampleContract.deployed();
         const balance = await instance.balanceOf(fungibleTokenBase, coinBase);
@@ -39,24 +60,43 @@ contract('SampleContract And Dex', function (accounts) {
         Send 1000 FungibleToken to subAccount
         * */
         await instance.transfer(subAccount, [fungibleTokenBase], [1000]);
-        const balance_after_send =  await instance.balanceOf(fungibleTokenBase, coinBase);
-        assert.equal(1000000 - 1000, balance_after_send, "should equal to 1000000 - 1000");
+        const balance_after_send = await instance.balanceOf(
+            fungibleTokenBase,
+            coinBase
+        );
+        assert.equal(
+            1000000 - 1000,
+            balance_after_send,
+            "should equal to 1000000 - 1000"
+        );
 
         //check balance of sub account
-        const balanceOfSubAccount = await instance.balanceOf(fungibleTokenBase, subAccount);
-        assert.equal(1000, balanceOfSubAccount)
+        const balanceOfSubAccount = await instance.balanceOf(
+            fungibleTokenBase,
+            subAccount
+        );
+        assert.equal(1000, balanceOfSubAccount);
     });
 
-    it("[3] should send non-fungible token. Test minting and sending.", async function () {
+    it("[3] should send non-fungible token. Test minting and sending.", async function() {
         // Instances
         const instance = await SampleContract.deployed();
 
         // Token Type
-        const nonFungibleTokenBase = nonFungibleBigInt.plus(fungibleBigInt.times(3));
+        const nonFungibleTokenBase = nonFungibleBigInt.plus(
+            fungibleBigInt.times(3)
+        );
         const nonFungibleTokenType = nonFungibleTokenBase.toString();
 
         // mint new non-fungible token tokenId 3
-        await instance.mint("NonFungibleToken", 0, "https://fuckyou.com", 0, "NFT", true);
+        await instance.mint(
+            "NonFungibleToken",
+            0,
+            "https://fuckyou.com",
+            0,
+            "NFT",
+            true
+        );
 
         // mint token
         await instance.mintNonFungible(nonFungibleTokenType, [coinBase]);
@@ -71,30 +111,47 @@ contract('SampleContract And Dex', function (accounts) {
         assert.equal(coinBase, tokenOwner);
 
         // check token balance is correct
-        const balance = await instance.balanceOf(nonFungibleTokenType, coinBase);
+        const balance = await instance.balanceOf(
+            nonFungibleTokenType,
+            coinBase
+        );
         assert.equal(1, balance);
 
         // transfer non-fungible token from coinBase to subAccount
         await instance.transfer(subAccount, [mintedTokenId], [1]);
 
         // check token is correctly sent
-        const balance_after_send = await instance.balanceOf(nonFungibleTokenType, coinBase);
-        const balance_after_receive = await instance.balanceOf(nonFungibleTokenType, subAccount);
+        const balance_after_send = await instance.balanceOf(
+            nonFungibleTokenType,
+            coinBase
+        );
+        const balance_after_receive = await instance.balanceOf(
+            nonFungibleTokenType,
+            subAccount
+        );
         const mintedTokenOwner = await instance.ownerOf(mintedTokenId);
         assert.equal(subAccount, mintedTokenOwner);
         assert.equal(0, balance_after_send);
-        assert.equal(1, balance_after_receive)
+        assert.equal(1, balance_after_receive);
     });
 
-    it("[4] should approve fungible token.", async function () {
+    it("[4] should approve fungible token.", async function() {
         const instance = await SampleContract.deployed();
-        const approval = await instance.allowance(fungibleTokenBase, coinBase, accounts[1]);
+        const approval = await instance.allowance(
+            fungibleTokenBase,
+            coinBase,
+            accounts[1]
+        );
         await instance.approve(accounts[1], [fungibleTokenBase], [0], [100]);
-        const approval_after_approve = await instance.allowance(fungibleTokenBase, coinBase, accounts[1]);
+        const approval_after_approve = await instance.allowance(
+            fungibleTokenBase,
+            coinBase,
+            accounts[1]
+        );
         assert.equal(100, approval_after_approve);
     });
 
-    it("[5] should mint and approve non-fungible token.", async function () {
+    it("[5] should mint and approve non-fungible token.", async function() {
         // Instances
         const instance = await SampleContract.deployed();
         const nonFungibleBase = nonFungibleBigInt.plus(fungibleBigInt.times(3));
@@ -106,28 +163,42 @@ contract('SampleContract And Dex', function (accounts) {
         const tokenId = nonFungibleBase.plus(1).toString();
         // total supply should equal to 2
         assert.equal(2, totalSupply);
-        const balance = await instance.balanceOf(nonFungibleTokenType, accounts[0]);
+        const balance = await instance.balanceOf(
+            nonFungibleTokenType,
+            accounts[0]
+        );
         // balance of coinBase account should be 1
         assert.equal(1, balance);
         const tokenOwner = await instance.ownerOf(tokenId);
-        assert.equal(accounts[0], tokenOwner, `token owner should be ${tokenOwner}`);
-        await instance.approve(accounts[2], [tokenId], [0],[1]);
-        const allowance = await instance.allowance(tokenId, accounts[0], accounts[2]);
-        assert.equal(1, allowance, "allowance should be 1")
+        assert.equal(
+            accounts[0],
+            tokenOwner,
+            `token owner should be ${tokenOwner}`
+        );
+        await instance.approve(accounts[2], [tokenId], [0], [1]);
+        const allowance = await instance.allowance(
+            tokenId,
+            accounts[0],
+            accounts[2]
+        );
+        assert.equal(1, allowance, "allowance should be 1");
     });
 
-    it("[6] coinBase has non-fungible token whose ID is 1", async function () {
+    it("[6] coinBase has non-fungible token whose ID is 1", async function() {
         const instance = await SampleContract.deployed();
         const nonFungibleBase = nonFungibleBigInt.plus(fungibleBigInt.times(3));
         const nonFungibleType = nonFungibleBase.toString();
-        const ids = await instance.nonFungibleOwnedTokens(coinBase, nonFungibleType);
+        const ids = await instance.nonFungibleOwnedTokens(
+            coinBase,
+            nonFungibleType
+        );
         const expectedOwnedTokens = [1];
-        for(let i = 0; i < ids.length; i++) {
-            assert.equal(expectedOwnedTokens[i], ids[i])
+        for (let i = 0; i < ids.length; i++) {
+            assert.equal(expectedOwnedTokens[i], ids[i]);
         }
     });
 
-    it("[7] token can be deposited ETH to Dex contract", async function () {
+    it("[7] token can be deposited ETH to Dex contract", async function() {
         // Instances
         const moldexInstance = await moldex.deployed();
         const token = await SampleContract.deployed();
@@ -137,18 +208,30 @@ contract('SampleContract And Dex', function (accounts) {
         assert.equal(coinBase, feeAccount);
         const isAdmin = await moldexInstance.admins(coinBase);
         assert.equal(true, isAdmin);
-        await moldexInstance.deposit([token.address], [fungibleTokenBase], [100]);
+        await moldexInstance.deposit(
+            [token.address],
+            [fungibleTokenBase],
+            [100]
+        );
 
-        const deposit = await moldexInstance.ERC1155Tokens(token.address,fungibleTokenBase,coinBase);
-        assert.equal(100, deposit)
+        const deposit = await moldexInstance.ERC1155Tokens(
+            token.address,
+            fungibleTokenBase,
+            coinBase
+        );
+        assert.equal(100, deposit);
     });
 
     it("[8] ETH can be deposited to Dex contract", async function() {
         const moldexInstance = await moldex.deployed();
         const ethSend = web3.toWei(0.1, "ether");
-        await web3.eth.sendTransaction({ to: moldexInstance.address, from: subAccount, value: ethSend });
+        await web3.eth.sendTransaction({
+            to: moldexInstance.address,
+            from: subAccount,
+            value: ethSend
+        });
         const ethDeposit = await moldexInstance.ERC1155Tokens(0, 0, subAccount);
-        assert.equal(ethSend, ethDeposit)
+        assert.equal(ethSend, ethDeposit);
     });
 
     it("[9] ETH can withdraw from Dex contract", async function() {
@@ -157,11 +240,11 @@ contract('SampleContract And Dex', function (accounts) {
         const ethWithdraw = web3.toWei(0.1, "ether");
         const beforeBalance = await moldexInstance.ERC1155Tokens(0, 0, account);
         // should deposit 0.1 ether
-        assert.equal( ethWithdraw, beforeBalance);
+        assert.equal(ethWithdraw, beforeBalance);
         // withdraw eth as accounts[1]
         await moldexInstance.withdraw([0], [0], [100], { from: account });
         const afterBalance = await moldexInstance.ERC1155Tokens(0, 0, account);
-        assert.equal(true, beforeBalance < afterBalance)
+        assert.equal(true, beforeBalance < afterBalance);
     });
 
     it("[10] fungible-token can be deposited to Dex contract as subAccount", async function() {
@@ -170,19 +253,38 @@ contract('SampleContract And Dex', function (accounts) {
         const tokenInstance = await SampleContract.deployed();
 
         // check current balances
-        const balanceBefore = await tokenInstance.balanceOf(fungibleTokenBase, subAccount);
+        const balanceBefore = await tokenInstance.balanceOf(
+            fungibleTokenBase,
+            subAccount
+        );
         assert.equal(1000, balanceBefore, "subAccount should have 1000 token");
 
         // deposit fungible token
-        await moldexInstance.deposit([tokenInstance.address], [fungibleTokenBase], [200], { from: subAccount });
+        await moldexInstance.deposit(
+            [tokenInstance.address],
+            [fungibleTokenBase],
+            [200],
+            { from: subAccount }
+        );
 
         //check balance after deposit
-        const balanceAfter = await tokenInstance.balanceOf(fungibleTokenBase, subAccount);
-        assert.equal(800, balanceAfter, "token balance of subAccount should be 900 after deposit.");
+        const balanceAfter = await tokenInstance.balanceOf(
+            fungibleTokenBase,
+            subAccount
+        );
+        assert.equal(
+            800,
+            balanceAfter,
+            "token balance of subAccount should be 900 after deposit."
+        );
 
         // check deposit
-        const deposit = await moldexInstance.ERC1155Tokens( tokenInstance.address, fungibleTokenBase, subAccount);
-        assert.equal(200, deposit, "deposit should be 200")
+        const deposit = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            fungibleTokenBase,
+            subAccount
+        );
+        assert.equal(200, deposit, "deposit should be 200");
     });
 
     it("[11] sign message and can adminWithdraw ", async function() {
@@ -199,26 +301,46 @@ contract('SampleContract And Dex', function (accounts) {
         const paddedFungibleBaseHex = convertHexString(fungibleBaseBN);
         const paddedAmountHex = convertHexString(amountBN);
         const paddedNonce = convertHexString(nonce);
-        const baseMessage = moldexInstance.address + tokenInstance.address.slice(2,42) + paddedFungibleBaseHex + paddedAmountHex + subAccount.slice(2,42) + paddedNonce;
+        const baseMessage =
+            moldexInstance.address +
+            tokenInstance.address.slice(2, 42) +
+            paddedFungibleBaseHex +
+            paddedAmountHex +
+            subAccount.slice(2, 42) +
+            paddedNonce;
 
         // encoding: hexをつけたらsolidityのsha3と同じになってうまくいった
-        const hashMessage = web3.sha3(baseMessage, { encoding: 'hex' });
+        const hashMessage = web3.sha3(baseMessage, { encoding: "hex" });
 
         const sign = web3.eth.sign(subAccount, hashMessage);
-        const r = sign.slice(0,66);
+        const r = sign.slice(0, 66);
         const s = "0x" + sign.slice(66, 130);
         let v_base = new BN(Number(sign.slice(130, 132)) + 27);
 
         // check balance before withdraw
-        const deposit = await moldexInstance.ERC1155Tokens(tokenInstance.address, fungibleTokenBase, subAccount);
+        const deposit = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            fungibleTokenBase,
+            subAccount
+        );
         assert.equal(200, deposit, "deposit should be 200");
 
         // send transaction from coinBase account
         const addresses = [tokenInstance.address, subAccount];
         // tokenId, value, fee, nonce
         const values = [fungibleTokenBase, 100, 0, 1];
-        await moldexInstance.adminWithdrawERC1155(addresses, values, v_base.toString(10), r, s);
-        const depositAfter = await moldexInstance.ERC1155Tokens(tokenInstance.address, fungibleTokenBase, subAccount);
+        await moldexInstance.adminWithdrawERC1155(
+            addresses,
+            values,
+            v_base.toString(10),
+            r,
+            s
+        );
+        const depositAfter = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            fungibleTokenBase,
+            subAccount
+        );
         assert.equal(100, depositAfter, "deposit should decrease to 100");
     });
 
@@ -227,23 +349,58 @@ contract('SampleContract And Dex', function (accounts) {
         const moldexInstance = await moldex.deployed();
         const tokenInstance = await SampleContract.deployed();
 
-        const coinBaseBalanceBefore = await moldexInstance.ERC1155Tokens(tokenInstance.address, fungibleTokenBase, coinBase);
-        const subAccountBalanceBefore = await moldexInstance.ERC1155Tokens(tokenInstance.address, fungibleTokenBase, subAccount);
-        assert.equal(100, coinBaseBalanceBefore, "coinBase deposit should be 100 before exchange");
-        assert.equal(100, subAccountBalanceBefore, "subAccount deposit should be 100 before exchange");
+        const coinBaseBalanceBefore = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            fungibleTokenBase,
+            coinBase
+        );
+        const subAccountBalanceBefore = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            fungibleTokenBase,
+            subAccount
+        );
+        assert.equal(
+            100,
+            coinBaseBalanceBefore,
+            "coinBase deposit should be 100 before exchange"
+        );
+        assert.equal(
+            100,
+            subAccountBalanceBefore,
+            "subAccount deposit should be 100 before exchange"
+        );
 
         // mint fungible token 2
-        await tokenInstance.mint("Fungible Token 2", 1000000, "http://sample.fungible.com", 2, "FT2", false);
+        await tokenInstance.mint(
+            "Fungible Token 2",
+            1000000,
+            "http://sample.fungible.com",
+            2,
+            "FT2",
+            false
+        );
         const tokenTypeBase = fungibleBigInt.times(4);
         const tokenType = tokenTypeBase.toString();
 
         // balance Of coinBase
-        const coinBaseBalanceNewToken = await tokenInstance.balanceOf(tokenType, coinBase);
+        const coinBaseBalanceNewToken = await tokenInstance.balanceOf(
+            tokenType,
+            coinBase
+        );
         assert.equal(1000000, coinBaseBalanceNewToken);
 
         // deposit new token to contract
-        await moldexInstance.deposit([tokenInstance.address], [tokenType], [200], { from: coinBase });
-        const depositCoinBase = await moldexInstance.ERC1155Tokens(tokenInstance.address, tokenType, coinBase);
+        await moldexInstance.deposit(
+            [tokenInstance.address],
+            [tokenType],
+            [200],
+            { from: coinBase }
+        );
+        const depositCoinBase = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            tokenType,
+            coinBase
+        );
         assert.equal(200, depositCoinBase);
     });
 
@@ -294,28 +451,35 @@ contract('SampleContract And Dex', function (accounts) {
         const feeTakePaddedHexString = convertHexString(feeTakeBN);
 
         const orderHashBase =
-            moldexInstance.address + tokenInstance.address.slice(2,42) +
-            buyTokenIdPaddedHexString + buyAmountPaddedHexString +
-            tokenInstance.address.slice(2,42) + sellTokenIdPaddedHexString +
-            sellAmountPaddedHexString + expiryPaddedHexString +
-            makerNoncePaddedHexString + coinBase.slice(2,42);
+            moldexInstance.address +
+            tokenInstance.address.slice(2, 42) +
+            buyTokenIdPaddedHexString +
+            buyAmountPaddedHexString +
+            tokenInstance.address.slice(2, 42) +
+            sellTokenIdPaddedHexString +
+            sellAmountPaddedHexString +
+            expiryPaddedHexString +
+            makerNoncePaddedHexString +
+            coinBase.slice(2, 42);
         // sign order hash
-        const orderHash = web3.sha3(orderHashBase, { encoding: 'hex' });
+        const orderHash = web3.sha3(orderHashBase, { encoding: "hex" });
         const orderHashSign = web3.eth.sign(coinBase, orderHash);
-        const r1 = orderHashSign.slice(0,66);
+        const r1 = orderHashSign.slice(0, 66);
         const s1 = "0x" + orderHashSign.slice(66, 130);
         let v_base1 = new BN(Number(orderHashSign.slice(130, 132)) + 27);
         const v1 = v_base1.toString(10);
 
         // create tradeHash
         const tradeHashBase =
-            orderHash + amountPaddedHexString +
-            subAccount.slice(2,42) + takerNoncePaddedHexString;
-        const tradeHash = web3.sha3(tradeHashBase, { encoding: 'hex' });
+            orderHash +
+            amountPaddedHexString +
+            subAccount.slice(2, 42) +
+            takerNoncePaddedHexString;
+        const tradeHash = web3.sha3(tradeHashBase, { encoding: "hex" });
         const tradeHashSign = web3.eth.sign(subAccount, tradeHash);
-        const r2 = tradeHashSign.slice(0,66);
-        const s2 = "0x" + tradeHashSign.slice(66,130);
-        const v_base2 = new BN(Number(tradeHashSign.slice(130,132)) + 27);
+        const r2 = tradeHashSign.slice(0, 66);
+        const s2 = "0x" + tradeHashSign.slice(66, 130);
+        const v_base2 = new BN(Number(tradeHashSign.slice(130, 132)) + 27);
         const v2 = v_base2.toString(10);
 
         /*
@@ -351,24 +515,32 @@ contract('SampleContract And Dex', function (accounts) {
             subAccount
         ];
 
-        const v = [
-            v1,
-            v2
-        ];
+        const v = [v1, v2];
 
-        const rs = [
-            r1,
-            s1,
-            r2,
-            s2
-        ];
+        const rs = [r1, s1, r2, s2];
         // create trade transaction
         await moldexInstance.trade(tradeValues, tradeAddresses, v, rs);
 
-        const depositAfterExchange = await moldexInstance.ERC1155Tokens(tokenInstance.address, buyTokenIdBN.toString(10), coinBase);
-        const depositAfterExchangeSub = await moldexInstance.ERC1155Tokens(tokenInstance.address, buyTokenIdBN.toString(10), subAccount);
-        const depositAfterExchangeSell = await moldexInstance.ERC1155Tokens(tokenInstance.address, sellTokenIdBN.toString(10), coinBase);
-        const depositAfterExchangeSellSub = await moldexInstance.ERC1155Tokens(tokenInstance.address, sellTokenIdBN.toString(10), subAccount);
+        const depositAfterExchange = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            buyTokenIdBN.toString(10),
+            coinBase
+        );
+        const depositAfterExchangeSub = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            buyTokenIdBN.toString(10),
+            subAccount
+        );
+        const depositAfterExchangeSell = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            sellTokenIdBN.toString(10),
+            coinBase
+        );
+        const depositAfterExchangeSellSub = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            sellTokenIdBN.toString(10),
+            subAccount
+        );
 
         // assert buy tokens
         assert.equal(150, depositAfterExchange); // 100 + 50 = 150 coinBase bought 50 FTN1
@@ -379,9 +551,8 @@ contract('SampleContract And Dex', function (accounts) {
         assert.equal(100, depositAfterExchangeSellSub); // 0 + 100 = 100 subAccount buy 100 FTN2
     });
 
-
     // Deposit non-fungible token
-    it("[14] should deposit non-fungible token to dex contract", async function () {
+    it("[14] should deposit non-fungible token to dex contract", async function() {
         // Instances
         const moldexInstance = await moldex.deployed();
         const tokenInstance = await SampleContract.deployed();
@@ -389,27 +560,45 @@ contract('SampleContract And Dex', function (accounts) {
         /*  tokenIds
             non-fungibleToken
         */
-        const nonFungibleIdBase = nonFungibleBigInt.plus(fungibleBigInt.times(3));
+        const nonFungibleIdBase = nonFungibleBigInt.plus(
+            fungibleBigInt.times(3)
+        );
         const nonFungibleTokenId = nonFungibleIdBase.toString();
 
-        const balanceOfNonFungible = await tokenInstance.balanceOf(nonFungibleTokenId, coinBase);
+        const balanceOfNonFungible = await tokenInstance.balanceOf(
+            nonFungibleTokenId,
+            coinBase
+        );
 
         // balance should be 11
         assert.equal(1, balanceOfNonFungible);
 
-        const ownedTokensOfCoinBase = await tokenInstance.nonFungibleOwnedTokens(coinBase, nonFungibleTokenId);
-        const depositTokenIdBase = nonFungibleIdBase.plus(ownedTokensOfCoinBase[0].toString()); // index 1
+        const ownedTokensOfCoinBase = await tokenInstance.nonFungibleOwnedTokens(
+            coinBase,
+            nonFungibleTokenId
+        );
+        const depositTokenIdBase = nonFungibleIdBase.plus(
+            ownedTokensOfCoinBase[0].toString()
+        ); // index 1
         const depositTokenId = depositTokenIdBase.toString();
 
         // deposit fungible token
-        await moldexInstance.deposit([tokenInstance.address], [depositTokenId], [1]);
+        await moldexInstance.deposit(
+            [tokenInstance.address],
+            [depositTokenId],
+            [1]
+        );
 
         // check deposit
-        const depositNFT = await moldexInstance.ERC1155Tokens(tokenInstance.address, depositTokenId, coinBase);
+        const depositNFT = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            depositTokenId,
+            coinBase
+        );
         assert.equal(1, depositNFT.toString());
     });
 
-    it('[15] should exchange non-fungible to fungible token', async function () {
+    it("[15] should exchange non-fungible to fungible token", async function() {
         /*          Deposit
                    Before exchange             After exchange
                    token3(NFT)  token4(FT)     token3(NFT)  token4(FT)
@@ -424,18 +613,19 @@ contract('SampleContract And Dex', function (accounts) {
         /*  tokenIds
             non-fungibleToken
         */
-        const three = new BN('3');
-        const one = new BN('1');
-        const nonFungibleIdBaseBN = nonFungibleBaseBN.add(fungibleBaseBN.mul(three)).add(one);
+        const three = new BN("3");
+        const one = new BN("1");
+        const nonFungibleIdBaseBN = nonFungibleBaseBN
+            .add(fungibleBaseBN.mul(three))
+            .add(one);
         const nonFungibleTokenId = nonFungibleIdBaseBN.toString(10);
 
         /*
             fungibleToken
         * */
-        const four = new BN('4');
+        const four = new BN("4");
         const fungibleTokenIdBN = fungibleBaseBN.mul(four);
         const fungibleTokenId = fungibleTokenIdBN.toString(10);
-
 
         // order
         const buyAmountBN = new BN("50");
@@ -458,46 +648,41 @@ contract('SampleContract And Dex', function (accounts) {
         const hexBuyTokenId = convertHexString(fungibleTokenIdBN);
         const hexSellTokenId = convertHexString(nonFungibleIdBaseBN);
 
-
         // create orderHash
         const orderHashBase =
-            moldexInstance.address + tokenInstance.address.slice(2,42) +
-            hexBuyTokenId + hexBuyAmount +
-            tokenInstance.address.slice(2,42) + hexSellTokenId +
-            hexSellAmount + hexExpiry +
-            hexMakerNonce + coinBase.slice(2,42);
+            moldexInstance.address +
+            tokenInstance.address.slice(2, 42) +
+            hexBuyTokenId +
+            hexBuyAmount +
+            tokenInstance.address.slice(2, 42) +
+            hexSellTokenId +
+            hexSellAmount +
+            hexExpiry +
+            hexMakerNonce +
+            coinBase.slice(2, 42);
         // sign order hash
-        const orderHash = web3.sha3(orderHashBase, { encoding: 'hex' });
+        const orderHash = web3.sha3(orderHashBase, { encoding: "hex" });
         const orderHashSign = web3.eth.sign(coinBase, orderHash);
-        const r1 = orderHashSign.slice(0,66);
+        const r1 = orderHashSign.slice(0, 66);
         const s1 = "0x" + orderHashSign.slice(66, 130);
         let v_base1 = new BN(Number(orderHashSign.slice(130, 132)) + 27);
         const v1 = v_base1.toString(10);
 
         // create tradeHash
         const tradeHashBase =
-            orderHash + hexAmount +
-            subAccount.slice(2,42) + hexTakerNonce;
-        const tradeHash = web3.sha3(tradeHashBase, { encoding: 'hex' });
+            orderHash + hexAmount + subAccount.slice(2, 42) + hexTakerNonce;
+        const tradeHash = web3.sha3(tradeHashBase, { encoding: "hex" });
         const tradeHashSign = web3.eth.sign(subAccount, tradeHash);
-        const r2 = tradeHashSign.slice(0,66);
-        const s2 = "0x" + tradeHashSign.slice(66,130);
-        const v_base2 = new BN(Number(tradeHashSign.slice(130,132)) + 27);
+        const r2 = tradeHashSign.slice(0, 66);
+        const s2 = "0x" + tradeHashSign.slice(66, 130);
+        const v_base2 = new BN(Number(tradeHashSign.slice(130, 132)) + 27);
         const v2 = v_base2.toString(10);
 
         // trade args
 
-        const v = [
-            v1,
-            v2
-        ];
+        const v = [v1, v2];
 
-        const rs = [
-            r1,
-            s1,
-            r2,
-            s2
-        ];
+        const rs = [r1, s1, r2, s2];
 
         const tradeValues = [
             buyAmountBN.toString(10),
@@ -520,22 +705,38 @@ contract('SampleContract And Dex', function (accounts) {
         ];
 
         await moldexInstance.trade(tradeValues, tradeAddresses, v, rs);
-        const depositAfterExchange = await moldexInstance.ERC1155Tokens(tokenInstance.address, fungibleTokenId, coinBase);
-        const depositAfterExchangeSub = await moldexInstance.ERC1155Tokens(tokenInstance.address, fungibleTokenId, subAccount);
-        const depositAfterExchangeSell = await moldexInstance.ERC1155Tokens(tokenInstance.address, nonFungibleTokenId, coinBase);
-        const depositAfterExchangeSellSub = await moldexInstance.ERC1155Tokens(tokenInstance.address, nonFungibleTokenId, subAccount);
+        const depositAfterExchange = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            fungibleTokenId,
+            coinBase
+        );
+        const depositAfterExchangeSub = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            fungibleTokenId,
+            subAccount
+        );
+        const depositAfterExchangeSell = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            nonFungibleTokenId,
+            coinBase
+        );
+        const depositAfterExchangeSellSub = await moldexInstance.ERC1155Tokens(
+            tokenInstance.address,
+            nonFungibleTokenId,
+            subAccount
+        );
 
-
-        assert.equal(150,depositAfterExchange); // coinBase FT 150
-        assert.equal(50,depositAfterExchangeSub); // subAccount 50
+        assert.equal(150, depositAfterExchange); // coinBase FT 150
+        assert.equal(50, depositAfterExchangeSub); // subAccount 50
         assert.equal(0, depositAfterExchangeSell); // coinBase NFT 0
         assert.equal(1, depositAfterExchangeSellSub); // coinBase NFT 1
     });
     /*=========== Functions ==========*/
 
     function convertHexString(bn) {
-        if(!BN.isBN(bn)) { throw "an argument type should be  BN"}
-        return "0".repeat(64 - bn.toString("hex").length) + bn.toString('hex');
+        if (!BN.isBN(bn)) {
+            throw "an argument type should be  BN";
+        }
+        return "0".repeat(64 - bn.toString("hex").length) + bn.toString("hex");
     }
-
 });

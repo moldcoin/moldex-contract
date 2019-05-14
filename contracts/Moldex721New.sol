@@ -134,13 +134,8 @@ contract Moldex721New {
          ));
 
         bytes32 tradeHash = keccak256(abi.encodePacked(
-            address(this), // dex address
-             tradeAddresses[0], // 721 token address
-             tradeAddresses[2], // 721 token owner address
-             tradeValues[0], // token Id
-             tradeAddresses[1], //  moldToken Address
-             tradeValues[1], // mold amount
-             tradeAddresses[3] // 721 token receiver address
+            orderHash,
+            tradeAddresses[3] // 721 token receiver address
         ));
          // check maker signature is valid
         require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", orderHash)), v[0], rs[0], rs[1]) == tradeAddresses[2]);

@@ -1,4 +1,4 @@
-let moldex = artifacts.require("./Moldex721.sol");
+let moldex = artifacts.require("./Moldex721New.sol");
 
 module.exports = function(deployer) {
     deployer.deploy(moldex, web3.eth.coinbase, {
