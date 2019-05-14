@@ -139,7 +139,7 @@ contract Moldex721New {
         ));
          // check maker signature is valid
         require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", orderHash)), v[0], rs[0], rs[1]) == tradeAddresses[2]);
-        require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", tradeHash)), v[1], rs[1], rs[2]) == tradeAddresses[3]);
+        require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", tradeHash)), v[1], rs[2], rs[3]) == tradeAddresses[3]);
         // transfer mold
         if (!ERC20(tradeAddresses[1]).transferFrom(tradeAddresses[3], tradeAddresses[2], tradeValues[1] * 95 / 100)) revert();
         if (!ERC20(tradeAddresses[1]).transferFrom(tradeAddresses[3], feeAccount, tradeValues[1] * 5 / 100)) revert();

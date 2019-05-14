@@ -1,6 +1,6 @@
 var MyToken721 = artifacts.require("./MyToken721.sol");
 var MyToken20 = artifacts.require("./MyToken20.sol");
-var moldex = artifacts.require("./Moldex721.sol");
+var moldex = artifacts.require("./Moldex721New.sol");
 var BN = require("bn.js");
 var encodeCall = require("./helpers/encodeCall");
 
@@ -102,7 +102,7 @@ contract("Test Modlex 721", function(accounts) {
             v_base1.toString(10)
         ];
         // tradehash
-        const tradeHashBase = orderHashBase + subAccount.slice(2, 42);
+        const tradeHashBase = orderHash + subAccount.slice(2, 42);
         const tradeHash = web3.sha3(tradeHashBase, { encoding: "hex" });
         const tradeHashSign = web3.eth.sign(subAccount, tradeHash);
         const v2_base = new BN(Number(tradeHashSign.slice(130, 132)) + 27);
@@ -121,6 +121,10 @@ contract("Test Modlex 721", function(accounts) {
         const rs = [r1, s1, r2, s2];
         const v = [v1, v2];
         console.log(tradeValues, tradeAddresses, rs, v);
+        const allowance = await token20.allowance(subAccount, moldexI.address);
+        console.log("allowance: ", allowance);
+        const approved = await token721.getApproved(1);
+        console.log("approve721: ", approved, moldexI.address);
         await moldexI.trade(tradeValues, tradeAddresses, v, rs);
     });
     function convertHexString(bn) {
