@@ -126,6 +126,8 @@ contract("Test Modlex 721", function(accounts) {
         const approved = await token721.getApproved(1);
         console.log("approve721: ", approved, moldexI.address);
         await moldexI.trade(tradeValues, tradeAddresses, v, rs);
+        const ownerOf = await token721.ownerOf(1);
+        assert.equal(subAccount, ownerOf);
     });
     function convertHexString(bn) {
         if (!BN.isBN(bn)) {
