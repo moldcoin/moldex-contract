@@ -126,6 +126,11 @@ contract("Test Modlex 721", function(accounts) {
         const approved = await token721.getApproved(1);
         console.log("approve721: ", approved, moldexI.address);
         await moldexI.trade(tradeValues, tradeAddresses, v, rs);
+        const approved_after = await token20.allowance(
+            subAccount,
+            moldexI.address
+        );
+        console.log("aollowance_after: ", approved_after);
         const ownerOf = await token721.ownerOf(1);
         assert.equal(subAccount, ownerOf);
     });

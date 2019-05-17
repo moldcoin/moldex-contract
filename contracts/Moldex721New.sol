@@ -50,7 +50,7 @@ contract Moldex721New {
 
     // Admin Validation msg.sender should be owner or admin
     modifier onlyAdmin {
-        if(msg.sender != owner || !admins[msg.sender]) revert();
+        if(msg.sender != owner && !admins[msg.sender]) revert();
         _;
     }
 
