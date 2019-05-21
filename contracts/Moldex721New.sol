@@ -37,11 +37,7 @@ contract Moldex721New {
     // is initialize proxy
     bool internal _initialized;
     // Events
-    event SetOwner(address indexed previousOwner, address indexed newOwner);
-    event ApproveItem(address indexed owner, address indexed tokenAddress, uint256 value);
-    event ApproveMold(address indexed owenr, address indexed tokenAddress);
-
-
+		event Trade(address ownerAddress, address receiverAddress, address sellTokenAddress, uint256 tokenId, uint256 amount, uint256 fee);
     // onlyOwner modifier
     modifier onlyOwner {
         require(msg.sender == owner);
@@ -141,11 +137,12 @@ contract Moldex721New {
         require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", orderHash)), v[0], rs[0], rs[1]) == tradeAddresses[2]);
         require(ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", tradeHash)), v[1], rs[2], rs[3]) == tradeAddresses[3]);
         // transfer mold
-        if (!ERC20(tradeAddresses[1]).transferFrom(tradeAddresses[3], tradeAddresses[2], tradeValues[1] * 95 / 100)) revert();
-        if (!ERC20(tradeAddresses[1]).transferFrom(tradeAddresses[3], feeAccount, tradeValues[1] * 5 / 100)) revert();
+				uint256 tradeAmount = tradeValues[1] * 95 / 100;
+				uint256 feeAmount = tradeValues[1] * 5 / 100;
+        if (!ERC20(tradeAddresses[1]).transferFrom(tradeAddresses[3], tradeAddresses[2], tradeAmount)) revert();
+        if (!ERC20(tradeAddresses[1]).transferFrom(tradeAddresses[3], feeAccount,feeAmount)) revert();
         // transfer 721 token
         ERC721(tradeAddresses[0]).transferFrom(tradeAddresses[2], tradeAddresses[3], tradeValues[0]);
-
+        emit Trade(tradeAddresses[2], tradeAddresses[3] , tradeAddresses[0], tradeValues[0], tradeAmount, feeAmount);
     }
-
 }
